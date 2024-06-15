@@ -2,109 +2,120 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import io
-
-df=pd.read_csv('/Crop_recommendation (2) .csv')
-
-df.head(6)
-
-df.tail()
-
-df.isnull().sum()
-
-df.info()
-
-df['label'].value_counts()
-
-x=df.drop('label',axis=1)
-y=df['label']
-
-x.info()
-
-y.info()
+import streamlit as st
+import joblib
+import io  # Import io module
 
 from sklearn.model_selection import train_test_split
-
-x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=1,test_size=0.2)
-
-x_train.info()
-
-y_train.info()
-
 from sklearn.linear_model import LogisticRegression
-
-model=LogisticRegression()
-model.fit(x_train,y_train)
-
-y_pred1=model.predict(x_test)
-
-from sklearn.metrics import accuracy_score
-logistic_reg_acc=accuracy_score(y_test,y_pred1)
-print("logistic accuracy is" +str(logistic_reg_acc))
-
 from sklearn.tree import DecisionTreeClassifier
-model2=DecisionTreeClassifier()
-
-model2.fit(x_train, y_train)
-
-y_pred3=model2.predict(x_test)
-
-decision_acc=accuracy_score(y_test,y_pred3)
-
-print("Decision tree accuracy is "+str(decision_acc))
-
 from sklearn.ensemble import RandomForestClassifier
-model3=RandomForestClassifier()
-model3.fit(x_train,y_train)
-y_pred4=model3.predict(x_test)
+from sklearn.metrics import accuracy_score
 
-ramdom_acc=accuracy_score(y_test,y_pred4)
+page_bg_img = '''
+<style>
+body {
+background-color: #f0f0f0;  /* Change this to your desired background color */
+}
+</style>
+'''
 
-print("Random forest accuracy is"+str(ramdom_acc))
+# Load dataset
+df = pd.read_csv('./Data/Crop_recommendation.csv')
 
-import joblib
+st.title('Crop Recommendation App')
 
-filename='crop app'
+# Display dataset
+# st.write("Dataset preview:")
+# st.write(df.head(6))
 
-joblib.dump(model2,'crop app')
+# Dataset information
+# st.write("Dataset information:")
+buffer = io.StringIO()
+df.info(buf=buffer)
+s = buffer.getvalue()
+# st.text(s)
 
-app=joblib.load('crop app')
+# Check for null values
+# st.write("Check for null values:")
+# st.write(df.isnull().sum())
 
-#user input array:
+# Label value counts
+# st.write("Label value counts:")
+# st.write(df['label'].value_counts())
 
-arr=[[90,42,43,20.879744,82.002744,6.502985,202.935536]]
-y_pred5=app.predict(arr)
-y_pred5
+# Split dataset into features and target
+x = df.drop('label', axis=1)
+y = df['label']
+
+# Split dataset into training and test sets
+x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1, test_size=0.2)
+
+# Train Logistic Regression model
+logistic_model = LogisticRegression()
+logistic_model.fit(x_train, y_train)
+y_pred1 = logistic_model.predict(x_test)
+logistic_reg_acc = accuracy_score(y_test, y_pred1)
 
 
-#code for graphs:
-#logistic Regression
-plt.figure(figsize=(10,6))
-plt.scatter(y_test,y_pred1,color='black',alpha=0.5)
-plt.plot([y_test.min(),y_test.max()],[y_test.min(),y_test.max()],color='blue',linewidth=3)
-plt.xlabel('Actual')
-plt.ylabel('predicted')
-plt.title('Actual vs crop recommendation progression')
-plt.grid('True')
-plt.show()
+# Train Decision Tree model
+decision_tree_model = DecisionTreeClassifier()
+decision_tree_model.fit(x_train, y_train)
+y_pred3 = decision_tree_model.predict(x_test)
+decision_acc = accuracy_score(y_test, y_pred3)
 
-#Decision tree:
-plt.figure(figsize=(10,6))
-plt.scatter(y_test,y_pred3,color='black',alpha=0.5)
-plt.plot([y_test.min(),y_test.max()],[y_test.min(),y_test.max()],color='blue',linewidth=3)
-plt.xlabel('Actual')
-plt.ylabel('predicted')
-plt.title('Actual vs crop recommendation progression')
-plt.grid('True')
-plt.show()
 
-#Random forest:
-plt.figure(figsize=(10,6))
-plt.scatter(y_test,y_pred4,color='black',alpha=0.5)
-plt.plot([y_test.min(),y_test.max()],[y_test.min(),y_test.max()],color='blue',linewidth=3)
-plt.xlabel('Actual')
-plt.ylabel('predicted')
-plt.title('Actual vs crop recommendation progression')
-plt.grid('True')
-plt.show()
+# Train Random Forest model
+random_forest_model = RandomForestClassifier()
+random_forest_model.fit(x_train, y_train)
+y_pred4 = random_forest_model.predict(x_test)
+random_acc = accuracy_score(y_test, y_pred4)
 
+
+# Save the Decision Tree model
+joblib.dump(decision_tree_model, 'crop_app')
+
+# Load the model
+app = joblib.load('crop_app')
+
+# User input for prediction
+st.write("Predict crop recommendation based on user input:")
+N = st.number_input('Nitrogen', min_value=0)
+P = st.number_input('Phosphorus', min_value=0)
+K = st.number_input('Potassium', min_value=0)
+temperature = st.number_input('Temperature', min_value=0.0)
+humidity = st.number_input('Humidity', min_value=0.0)
+ph = st.number_input('pH', min_value=0.0)
+rainfall = st.number_input('Rainfall', min_value=0.0)
+
+if st.button('Predict'):
+    arr = [[N, P, K, temperature, humidity, ph, rainfall]]
+    y_pred5 = app.predict(arr)
+    st.write(f"Recommended Crop: {y_pred5[0]}")
+
+# Plotting graphs
+def plot_graph(y_test, y_pred, title):
+    plt.figure(figsize=(10, 6))
+    plt.scatter(y_test, y_pred, color='black', alpha=0.5)
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='blue', linewidth=3)
+    plt.xlabel('Actual')
+    plt.ylabel('Predicted')
+    plt.title(title)
+    plt.grid(True)
+    st.pyplot(plt)
+
+# Logistic Regression graph
+st.write("Logistic Regression: Actual vs Predicted")
+plot_graph(y_test, y_pred1, 'Actual vs Predicted (Logistic Regression)')
+
+# Decision Tree graph
+st.write("Decision Tree: Actual vs Predicted")
+plot_graph(y_test, y_pred3, 'Actual vs Predicted (Decision Tree)')
+
+# Random Forest graph
+st.write("Random Forest: Actual vs Predicted")
+plot_graph(y_test, y_pred4, 'Actual vs Predicted (Random Forest)')
+
+st.write(f"Logistic Regression accuracy: {logistic_reg_acc}")
+st.write(f"Decision Tree accuracy: {decision_acc}")
+st.write(f"Random Forest accuracy: {random_acc}")
