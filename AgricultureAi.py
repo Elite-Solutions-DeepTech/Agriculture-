@@ -21,7 +21,7 @@ background-color: #f0f0f0;  /* Change this to your desired background color */
 '''
 
 # Load dataset
-df = pd.read_csv('/mount/src/agriculture_ai/Data/Crop_recommendation.csv')
+df = pd.read_csv('/mount/src/agriculture_ai/Crop_recommendation.csv')
 
 st.title('Crop Recommendation App')
 
